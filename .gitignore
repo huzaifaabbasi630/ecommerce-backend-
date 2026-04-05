@@ -1,0 +1,78 @@
+# 🔥 Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 🔥 Logs
+logs
+*.log
+
+# 🔥 Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# 🔥 Dependency directories
+node_modules/
+jspm_packages/
+
+# 🔥 Environment variables (IMPORTANT)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 🔥 Firebase service account (VERY IMPORTANT 🚨)
+serviceAccountKey.json
+
+# 🔥 Build folders
+dist/
+build/
+.next/
+out/
+
+# 🔥 Vite cache
+.vite/
+
+# 🔥 OS files
+.DS_Store
+Thumbs.db
+
+# 🔥 IDE files
+.vscode/
+.idea/
+
+# 🔥 Temporary files
+tmp/
+temp/
+*.tmp
+
+# 🔥 Cache
+.cache/
+npm-cache/
+
+# 🔥 Coverage
+coverage/
+
+# 🔥 Misc
+*.tgz
+*.gz
+*.zip
+
+# 🔥 Vercel
+.vercel/
+
+# 🔥 Logs & debug
+*.local
+
+# 🔥 Mac system
+.AppleDouble
+.LSOverride
+
+# 🔥 Windows system
+ehthumbs.db
+Desktop.ini
