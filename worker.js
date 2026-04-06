@@ -2,7 +2,7 @@
  * Cloudflare Worker proxy for the backend API.
  * Update BACKEND_URL to your deployed backend endpoint.
  */
-const BACKEND_URL = 'https://your-backend.example.com';
+const BACKEND_URL = 'https://ecommerce-backend-psi-flax-75.vercel.app/';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
