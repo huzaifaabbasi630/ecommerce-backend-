@@ -1,64 +1,52 @@
 // firebase.js
-const dotenv = require('dotenv');
 const admin = require('firebase-admin');
 
-dotenv.config();
-
-let db;
+let app;
 
 function initFirebase() {
-  if (admin.apps.length) return;
+  if (app) return app;
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  let credential;
+  try {
+    // ✅ Get service account from ENV
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
-  if (serviceAccountJson) {
-    try {
-      const parsedAccount = typeof serviceAccountJson === 'string' && serviceAccountJson.startsWith('{')
-        ? JSON.parse(serviceAccountJson)
-        : serviceAccountJson;
+    // ✅ Fix private key (VERY IMPORTANT for Vercel)
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 
-      // Crucial for Vercel: Replace \n in private_key with actual newlines
-      if (parsedAccount.private_key) {
-        parsedAccount.private_key = parsedAccount.private_key.replace(/\\n/g, '\n');
-      }
+    app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
 
-      credential = admin.credential.cert(parsedAccount);
-    } catch (e) {
-      console.error('Error parsing FIREBASE_SERVICE_ACCOUNT:', e.message);
-      credential = admin.credential.applicationDefault();
-    }
-  } else {
-    credential = admin.credential.applicationDefault();
+    console.log('✅ Firebase initialized successfully');
+    return app;
+
+  } catch (error) {
+    console.error('❌ Firebase init error:', error.message);
+    throw new Error('Firebase initialization failed');
   }
-
-  admin.initializeApp({
-    credential,
-    projectId
-  });
-
-  db = admin.firestore();
-  console.log('✅ Firebase initialized successfully');
 }
 
+// ✅ Firestore
 function getFirestore() {
-  if (!db) initFirebase();
-  return db;
+  if (!app) initFirebase();
+  return admin.firestore();
 }
 
+// ✅ Auth
 function getAuth() {
-  initFirebase();
+  if (!app) initFirebase();
   return admin.auth();
 }
 
+// ✅ Ensure Admin User
 async function ensureAdminUser() {
   const auth = getAuth();
+
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env');
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD missing');
   }
 
   try {
@@ -69,12 +57,13 @@ async function ensureAdminUser() {
     }
 
     return user;
+
   } catch (error) {
     if (error.code === 'auth/user-not-found') {
       const newUser = await auth.createUser({
         email: adminEmail,
         password: adminPassword,
-        displayName: 'Site Administrator'
+        displayName: 'Admin'
       });
 
       await auth.setCustomUserClaims(newUser.uid, { admin: true });
