@@ -32,10 +32,13 @@ async function createOrder(req, res) {
     const orderSnapshot = await orderRef.get();
 
     res.status(201).json({ id: orderRef.id, ...orderSnapshot.data() });
-  } catch (error) {
-    console.error('[Create order error]', error);
-    res.status(500).json({ error: 'Unable to create order.' });
-  }
+  } catch (err) {
+  console.error("ORDER ERROR:", err); // 👈 ADD THIS
+  res.status(500).json({
+    error: "Unable to create order.",
+    details: err.message // 👈 ADD THIS
+  });
+}
 }
 
 async function getAllOrders(req, res) {
