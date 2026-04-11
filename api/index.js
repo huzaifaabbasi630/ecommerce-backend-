@@ -12,10 +12,11 @@ const ordersRouter = require('../routes/orders');
 const adminRouter = require('../routes/admin');
 
 const app = express();
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || '*';
+const FRONTEND_ORIGIN_ENV = process.env.FRONTEND_ORIGIN || '*';
+const FRONTEND_ORIGIN = FRONTEND_ORIGIN_ENV === '*' ? '*' : FRONTEND_ORIGIN_ENV.split(',');
 
 app.use(cors({
-  origin: FRONTEND_ORIGIN === '*' ? true : FRONTEND_ORIGIN,
+  origin: FRONTEND_ORIGIN,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization']
 }));
