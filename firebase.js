@@ -8,9 +8,14 @@ function initFirebase() {
 
   try {
     // ✅ Get service account from ENV
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    const saString = process.env.FIREBASE_SERVICE_ACCOUNT;
+    
+    if (!saString) {
+      console.error('❌ CRITICAL: FIREBASE_SERVICE_ACCOUNT environment variable is missing.');
+      throw new Error('FIREBASE_SERVICE_ACCOUNT is not defined in environment variables.');
+    }
 
-    // ✅ Fix private key (VERY IMPORTANT for Vercel)
+    const serviceAccount = JSON.parse(saString);
     serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 
     app = admin.initializeApp({
@@ -21,8 +26,11 @@ function initFirebase() {
     return app;
 
   } catch (error) {
-    console.error('❌ Firebase init error:', error.message);
-    throw new Error('Firebase initialization failed');
+    console.error('❌ Firebase init crash:', error.message);
+    if (error.message.includes('Unexpected token')) {
+      console.error('❌ HINT: FIREBASE_SERVICE_ACCOUNT is likely not a valid JSON string.');
+    }
+    throw error;
   }
 }
 
