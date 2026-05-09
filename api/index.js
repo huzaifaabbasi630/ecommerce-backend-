@@ -10,6 +10,7 @@ initFirebase();
 const authRouter = require('../routes/auth');
 const ordersRouter = require('../routes/orders');
 const adminRouter = require('../routes/admin');
+const productsRouter = require('../routes/products');
 
 const app = express();
 const FRONTEND_ORIGIN_ENV = process.env.FRONTEND_ORIGIN || '*';
@@ -34,6 +35,7 @@ app.get('/', (req, res) => {
       login: '/auth/login',
       adminLogin: '/auth/admin/login',
       orders: '/orders',
+      products: '/products',
       homepage: '/admin/homepage'
     }
   });
@@ -58,6 +60,7 @@ app.get('/test-firebase', async (req, res) => {
 app.use('/auth', authRouter);
 app.use('/orders', ordersRouter);
 app.use('/admin', adminRouter);
+app.use('/products', productsRouter);
 
 // 404
 app.use((req, res) => {

@@ -1,4 +1,5 @@
-﻿const { getFirestore } = require('../firebase');
+const { getFirestore } = require('../firebase');
+const { sendOrderConfirmation } = require('../utils/emailService');
 const db = getFirestore();
 
 function validateOrderPayload(payload) {
@@ -30,8 +31,29 @@ async function createOrder(req, res) {
 
     const orderRef = await db.collection('orders').add(newOrder);
     const orderSnapshot = await orderRef.get();
+    const createdOrder = { id: orderRef.id, ...orderSnapshot.data() };
 
-    res.status(201).json({ id: orderRef.id, ...orderSnapshot.data() });
+    // Send initial confirmation email to user
+    try {
+      await sendOrderConfirmation(
+        createdOrder.customerEmail,
+        {
+          customerName: createdOrder.customerName,
+          address: createdOrder.shippingAddress?.address,
+          phone: createdOrder.shippingAddress?.phone,
+          postalCode: createdOrder.shippingAddress?.postalCode,
+          items: createdOrder.items,
+          totalAmount: createdOrder.totalAmount
+        },
+        'Not specified',
+        'Pending'
+      );
+    } catch (emailErr) {
+      console.error('[Initial email error]', emailErr);
+      // Don't fail the order if email fails
+    }
+
+    res.status(201).json(createdOrder);
   } catch (error) {
     console.error('[Create order error]', error);
     res.status(500).json({ error: 'Unable to create order.' });
@@ -94,9 +116,56 @@ async function updateOrder(req, res) {
   }
 }
 
+async function sendOrderEmail(req, res) {
+  try {
+    const { orderId, deliveryDays, status } = req.body;
+
+    if (!orderId || !deliveryDays || !status) {
+      return res.status(400).json({ error: 'Missing orderId, deliveryDays, or status.' });
+    }
+
+    const orderDoc = await db.collection('orders').doc(orderId).get();
+    if (!orderDoc.exists) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+
+    const orderData = orderDoc.data();
+    const result = await sendOrderConfirmation(
+      orderData.customerEmail,
+      {
+        customerName: orderData.customerName,
+        address: orderData.shippingAddress?.address,
+        phone: orderData.shippingAddress?.phone,
+        postalCode: orderData.shippingAddress?.postalCode,
+        items: orderData.items,
+        totalAmount: orderData.totalAmount
+      },
+      deliveryDays,
+      status
+    );
+
+    if (result.success) {
+      // Update order status in DB too
+      await db.collection('orders').doc(orderId).update({
+        status: status,
+        deliveryDays: parseInt(deliveryDays),
+        emailSentAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      res.json({ success: true, message: 'Email sent successfully' });
+    } else {
+      res.status(500).json({ success: false, error: result.message });
+    }
+  } catch (error) {
+    console.error('[Send email error]', error);
+    res.status(500).json({ error: 'Unable to send email.' });
+  }
+}
+
 module.exports = {
   createOrder,
   getAllOrders,
   getOrderById,
-  updateOrder
+  updateOrder,
+  sendOrderEmail
 };
